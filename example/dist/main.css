@@ -1,0 +1,22 @@
+body {
+  box-sizing: border-box; }
+
+main-component {
+  background: wheat;
+  display: flex;
+  flex-flow: row; }
+
+main-component > div {
+  width: 50%;
+  border: 1px solid goldenrod;
+  padding: 10px; }
+  @media fakemedia and (max-width: 500px) and (min-width: 200px) {
+    main-component > div:first-child {
+      background: cyan; } }
+  @media fakemedia and (max-width: 500px) {
+    main-component > div:last-child {
+      background: lightgreen; } }
+  @media (max-width: 500px) {
+    main-component > div:last-child {
+      font-weight: bold;
+      text-shadow: 0 0 10px green; } }

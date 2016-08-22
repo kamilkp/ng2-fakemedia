@@ -1,0 +1,32 @@
+body {
+  box-sizing: border-box;
+}
+
+main-component {
+  background: wheat;
+  display: flex;
+  flex-flow: row;
+}
+
+main-component > div {
+  width: 50%;
+  border: 1px solid goldenrod;
+  padding: 10px;
+
+  &:first-child {
+    @media fakemedia and (max-width: 500px) and (min-width: 200px) {
+      background: cyan;
+    }
+  }
+
+  &:last-child {
+    @media fakemedia and (max-width: 500px) {
+      background: lightgreen;
+    }
+
+    @media (max-width: 500px) {
+      font-weight: bold;
+      text-shadow: 0 0 10px green;
+    }
+  }
+}
