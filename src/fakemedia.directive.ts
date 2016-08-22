@@ -44,7 +44,6 @@ export class Fakemedia {
   }
   refresh() {
     if (this.prevHeight !== this.element.nativeElement.offsetHeight || this.prevWidth !== this.element.nativeElement.offsetWidth) {
-
       const old = this.stylesheet;
       const style = document.createElement('style');
       let cssText = '';
@@ -53,7 +52,9 @@ export class Fakemedia {
         if (rule.matches(this.element.nativeElement)) {
           const cssRules = Array.prototype.slice.call(rule.rule.cssRules || rule.rule.rules);
           cssRules.forEach(cssRule => {
-            cssText += `\n${cssRule.cssText}`;
+            let [selectors, values] = cssRule.cssText.split('{');
+            selectors = selectors.trim() + `[${this.attrname}] `;
+            cssText += `\n${selectors}{${values}`;
           });
         }
       });
@@ -70,11 +71,16 @@ export class Fakemedia {
       this.prevHeight = this.element.nativeElement.offsetHeight;
       this.prevWidth = this.element.nativeElement.offsetWidth;
     }
+
+    const children = Array.prototype.slice.call(this.element.nativeElement.querySelectorAll('*'));
+    children.forEach(child => {
+      this.renderer.setElementAttribute(child, this.attrname, '');
+    });
   }
 }
 
 function _getRandomAttr(element) {
-  return 'fakemedia-' + Math.floor(Date.now() / element.outerHTML.length);
+  return 'fakemedia-' + Math.floor(Date.now() / (Math.random()*1000));
 }
 
 function _getRelevantMediaRules() {
