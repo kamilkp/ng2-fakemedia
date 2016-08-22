@@ -81,14 +81,16 @@ function _getRelevantMediaRules() {
   const mediaRules = [];
   const stylesheets = Array.prototype.slice.call(document.styleSheets);
   stylesheets.forEach(ss => {
-    const rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
-    rules.forEach(rule => {
-      if ('media' in rule) {
-        if (/fakemedia/.test(rule.media.mediaText)) {
-          mediaRules.push(rule);
+    if (ss.cssRules || ss.rules) {
+      const rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
+      rules.forEach(rule => {
+        if ('media' in rule) {
+          if (/fakemedia/.test(rule.media.mediaText)) {
+            mediaRules.push(rule);
+          }
         }
-      }
-    });
+      });
+    }
   });
 
   return mediaRules;
