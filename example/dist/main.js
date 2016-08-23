@@ -148,16 +148,20 @@ webpackJsonp([0],{
 	function _getRelevantMediaRules() {
 	    var mediaRules = [];
 	    var stylesheets = Array.prototype.slice.call(document.styleSheets);
-	    stylesheets.forEach(function (ss) {
-	        if (ss.cssRules || ss.rules) {
-	            var rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
-	            rules.forEach(function (rule) {
-	                if ('media' in rule) {
-	                    if (/fakemedia/.test(rule.media.mediaText)) {
-	                        mediaRules.push(rule);
+	    stylesheets.forEach(function (ss, styleSheetIndex) {
+	        try {
+	            if (ss.cssRules || ss.rules) {
+	                var rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
+	                rules.forEach(function (rule, ruleIndex) {
+	                    if ('media' in rule) {
+	                        if (/fakemedia/.test(rule.media.mediaText) || /unknown/.test(rule.media.mediaText)) {
+	                            mediaRules.push(rule);
+	                        }
 	                    }
-	                }
-	            });
+	                });
+	            }
+	        }
+	        catch (exception) {
 	        }
 	    });
 	    return mediaRules;
@@ -169,14 +173,18 @@ webpackJsonp([0],{
 	            rule: rule,
 	            className: className,
 	            matches: function (element) {
-	                var mediaArray = Array.prototype.slice.call(rule.media);
+	                // const mediaArray = Array.prototype.slice.call(rule.media);
+	                var mediaArray = [];
+	                for (var i = 0; i < rule.media.length; i++) {
+	                    mediaArray.push(rule.media.item(i));
+	                }
 	                return mediaArray.some(function (mediaRule) {
-	                    if (mediaRule === 'fakemedia') {
+	                    if (mediaRule === 'fakemedia' || mediaRule === 'unknown') {
 	                        return false; // false is neutral for the .some call (OR operator)
 	                    }
 	                    var parts = mediaRule.split('and').map(function (c) { return c.trim(); });
 	                    return parts.every(function (condition) {
-	                        if (condition === 'fakemedia') {
+	                        if (condition === 'fakemedia' || condition === 'unknown') {
 	                            return true; // true is neutral for the .every call (AND operator)
 	                        }
 	                        condition = condition.replace(/^\(/, '').replace(/\)$/, '');

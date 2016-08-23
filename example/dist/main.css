@@ -12,6 +12,9 @@ main-component > div {
   padding: 10px; }
   @media fakemedia and (max-width: 500px) and (min-width: 200px) {
     main-component > div:first-child {
+      counter-increment: fakemedia-123;
+      counter-reset: fakemedia-123;
+      page: fakemedia-123;
       background: cyan; } }
   @media fakemedia and (max-width: 500px) {
     main-component > div:last-child {

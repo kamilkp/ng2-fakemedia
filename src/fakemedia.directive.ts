@@ -86,16 +86,21 @@ function _getRandomAttr(element) {
 function _getRelevantMediaRules() {
   const mediaRules = [];
   const stylesheets = Array.prototype.slice.call(document.styleSheets);
-  stylesheets.forEach(ss => {
-    if (ss.cssRules || ss.rules) {
-      const rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
-      rules.forEach(rule => {
-        if ('media' in rule) {
-          if (/fakemedia/.test(rule.media.mediaText)) {
-            mediaRules.push(rule);
+  stylesheets.forEach((ss, styleSheetIndex) => {
+    try {
+      if (ss.cssRules || ss.rules) {
+        const rules = Array.prototype.slice.call(ss.cssRules || ss.rules); // ie
+        rules.forEach((rule, ruleIndex) => {
+          if ('media' in rule) {
+            if (/fakemedia/.test(rule.media.mediaText) || /unknown/.test(rule.media.mediaText)) {
+              mediaRules.push(rule);
+            }
           }
-        }
-      });
+        });
+      }
+    } catch (exception) {
+      // swallow SecurityError exceptions on firefox when accessing
+      // a cross-domain stylesheet e.g. google fonts
     }
   });
 
@@ -109,16 +114,21 @@ function _parseRules(rules) {
       rule,
       className,
       matches(element) {
-        const mediaArray = Array.prototype.slice.call(rule.media);
+        // const mediaArray = Array.prototype.slice.call(rule.media);
+
+        const mediaArray = [];
+        for (let i = 0; i < rule.media.length; i++) {
+          mediaArray.push(rule.media.item(i));
+        }
 
         return mediaArray.some(mediaRule => {
-          if (mediaRule === 'fakemedia') {
+          if (mediaRule === 'fakemedia' || mediaRule === 'unknown') {
             return false; // false is neutral for the .some call (OR operator)
           }
 
           const parts = mediaRule.split('and').map(c => c.trim());
           return parts.every(condition => {
-            if (condition === 'fakemedia') {
+            if (condition === 'fakemedia' || condition === 'unknown') {
               return true; // true is neutral for the .every call (AND operator)
             }
 

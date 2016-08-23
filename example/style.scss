@@ -15,6 +15,9 @@ main-component > div {
 
   &:first-child {
     @media fakemedia and (max-width: 500px) and (min-width: 200px) {
+      counter-increment: fakemedia-123;
+      counter-reset: fakemedia-123;
+      page: fakemedia-123;
       background: cyan;
     }
   }
