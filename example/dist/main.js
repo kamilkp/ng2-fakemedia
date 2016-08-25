@@ -74,6 +74,8 @@ webpackJsonp([0],{
 	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 	};
 	var core_1 = __webpack_require__(20);
+	var fakemediaStyleElement = null;
+	var parsedRules = null;
 	var Fakemedia = (function () {
 	    function Fakemedia(element, zone, renderer) {
 	        this.element = element;
@@ -83,12 +85,12 @@ webpackJsonp([0],{
 	        this.prevHeight = -1;
 	    }
 	    Fakemedia.prototype.ngOnInit = function () {
+	        // this.attrname = _getRandomAttr(this.element.nativeElement);
+	        // this.element.nativeElement.setAttribute(this.attrname, '');
 	        var _this = this;
-	        this.attrname = _getRandomAttr(this.element.nativeElement);
-	        this.element.nativeElement.setAttribute(this.attrname, '');
-	        var rules = _getRelevantMediaRules();
-	        var parsedRules = _parseRules(rules);
-	        this.parsedRules = parsedRules;
+	        if (!fakemediaStyleElement) {
+	            _init();
+	        }
 	        this.onStableUnsubscriber = this.zone.onStable.subscribe(this.refresh.bind(this));
 	        this.resizeHandler = function () { return void _this.zone.run(function () { }); };
 	        window.addEventListener('resize', this.resizeHandler);
@@ -103,35 +105,29 @@ webpackJsonp([0],{
 	    };
 	    Fakemedia.prototype.refresh = function () {
 	        var _this = this;
+	        if (!parsedRules) {
+	            return;
+	        }
 	        if (this.prevHeight !== this.element.nativeElement.offsetHeight || this.prevWidth !== this.element.nativeElement.offsetWidth) {
-	            var old = this.stylesheet;
-	            var style = document.createElement('style');
-	            var cssText_1 = '';
-	            this.parsedRules.forEach(function (rule) {
-	                if (rule.matches(_this.element.nativeElement)) {
-	                    var cssRules = Array.prototype.slice.call(rule.rule.cssRules || rule.rule.rules);
-	                    cssRules.forEach(function (cssRule) {
-	                        var _a = cssRule.cssText.split('{'), selectors = _a[0], values = _a[1];
-	                        selectors = selectors.trim() + ("[" + _this.attrname + "] ");
-	                        cssText_1 += "\n" + selectors + "{" + values;
-	                    });
-	                }
+	            var attrsDict_1 = {};
+	            parsedRules.forEach(function (rule) {
+	                attrsDict_1[rule.attrName] = rule.matches(_this.element.nativeElement);
 	            });
-	            style.innerHTML = cssText_1;
-	            this.stylesheet = style;
-	            if (old) {
-	                document.head.replaceChild(this.stylesheet, old);
-	            }
-	            else {
-	                document.head.appendChild(this.stylesheet);
-	            }
 	            this.prevHeight = this.element.nativeElement.offsetHeight;
 	            this.prevWidth = this.element.nativeElement.offsetWidth;
+	            var elements = Array.prototype.slice.call(this.element.nativeElement.querySelectorAll('*'));
+	            elements.unshift(this.element.nativeElement);
+	            elements.forEach(function (element) {
+	                Object.keys(attrsDict_1).forEach(function (attrName) {
+	                    if (attrsDict_1[attrName]) {
+	                        element.setAttribute(attrName, '');
+	                    }
+	                    else {
+	                        element.removeAttribute(attrName);
+	                    }
+	                });
+	            });
 	        }
-	        var children = Array.prototype.slice.call(this.element.nativeElement.querySelectorAll('*'));
-	        children.forEach(function (child) {
-	            _this.renderer.setElementAttribute(child, _this.attrname, '');
-	        });
 	    };
 	    Fakemedia = __decorate([
 	        core_1.Directive({
@@ -142,6 +138,23 @@ webpackJsonp([0],{
 	    return Fakemedia;
 	}());
 	exports.Fakemedia = Fakemedia;
+	function _init() {
+	    var rules = _getRelevantMediaRules();
+	    parsedRules = _parseRules(rules);
+	    var style = document.createElement('style');
+	    var cssText = '';
+	    parsedRules.forEach(function (parsedRule) {
+	        var cssRules = Array.prototype.slice.call(parsedRule.rule.cssRules || parsedRule.rule.rules);
+	        cssRules.forEach(function (cssRule) {
+	            var _a = cssRule.cssText.split('{'), selectors = _a[0], values = _a[1];
+	            selectors = selectors.trim() + ("[" + parsedRule.attrName + "] ");
+	            cssText += "\n" + selectors + "{" + values;
+	        });
+	    });
+	    style.innerHTML = cssText;
+	    document.head.appendChild(style);
+	    fakemediaStyleElement = style;
+	}
 	function _getRandomAttr(element) {
 	    return 'fakemedia-' + Math.floor(Date.now() / (Math.random() * 1000));
 	}
@@ -168,10 +181,10 @@ webpackJsonp([0],{
 	}
 	function _parseRules(rules) {
 	    return rules.map(function (rule) {
-	        var className = rule.media.mediaText.replace(/[^\w\d_]/g, '_');
+	        var attrName = rule.media.mediaText.replace(/[^\w\d_]/g, '_');
 	        return {
 	            rule: rule,
-	            className: className,
+	            attrName: attrName,
 	            matches: function (element) {
 	                // const mediaArray = Array.prototype.slice.call(rule.media);
 	                var mediaArray = [];
@@ -215,7 +228,7 @@ webpackJsonp([0],{
 	    rules.forEach(function (rule) {
 	        var cssRules = Array.prototype.slice.call(rule.rule.cssRules || rule.rule.rules);
 	        cssRules.forEach(function (cssRule) {
-	            newCssText += "\n." + rule.className + "[" + attr + "] " + cssRule.cssText;
+	            newCssText += "\n." + rule.attrName + "[" + attr + "] " + cssRule.cssText;
 	        });
 	    });
 	    var style = document.createElement('style');

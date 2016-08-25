@@ -5,6 +5,9 @@ import {
   Renderer,
 } from '@angular/core';
 
+let fakemediaStyleElement = null;
+let parsedRules = null;
+
 @Directive({
   selector: '[fakemedia]'
 })
@@ -12,7 +15,6 @@ import {
 export class Fakemedia {
   attrname: string;
   onStableUnsubscriber: any;
-  parsedRules: any;
   resizeHandler: any;
   prevWidth: number = -1;
   prevHeight: number = -1;
@@ -21,13 +23,13 @@ export class Fakemedia {
 
   }
   ngOnInit() {
-    this.attrname = _getRandomAttr(this.element.nativeElement);
-    this.element.nativeElement.setAttribute(this.attrname, '');
+    // this.attrname = _getRandomAttr(this.element.nativeElement);
+    // this.element.nativeElement.setAttribute(this.attrname, '');
 
-    const rules = _getRelevantMediaRules();
-    const parsedRules = _parseRules(rules);
+    if (!fakemediaStyleElement) {
+      _init();
+    }
 
-    this.parsedRules = parsedRules;
     this.onStableUnsubscriber = this.zone.onStable.subscribe(this.refresh.bind(this));
 
     this.resizeHandler = () => void this.zone.run(() => {});
@@ -43,40 +45,53 @@ export class Fakemedia {
     }
   }
   refresh() {
+    if (!parsedRules) {
+      return;
+    }
+
     if (this.prevHeight !== this.element.nativeElement.offsetHeight || this.prevWidth !== this.element.nativeElement.offsetWidth) {
-      const old = this.stylesheet;
-      const style = document.createElement('style');
-      let cssText = '';
-
-      this.parsedRules.forEach(rule => {
-        if (rule.matches(this.element.nativeElement)) {
-          const cssRules = Array.prototype.slice.call(rule.rule.cssRules || rule.rule.rules);
-          cssRules.forEach(cssRule => {
-            let [selectors, values] = cssRule.cssText.split('{');
-            selectors = selectors.trim() + `[${this.attrname}] `;
-            cssText += `\n${selectors}{${values}`;
-          });
-        }
+      const attrsDict = {};
+      parsedRules.forEach(rule => {
+        attrsDict[rule.attrName] = rule.matches(this.element.nativeElement)
       });
-
-      style.innerHTML = cssText;
-      this.stylesheet = style;
-
-      if (old) {
-        document.head.replaceChild(this.stylesheet, old);
-      } else {
-        document.head.appendChild(this.stylesheet);
-      }
 
       this.prevHeight = this.element.nativeElement.offsetHeight;
       this.prevWidth = this.element.nativeElement.offsetWidth;
-    }
 
-    const children = Array.prototype.slice.call(this.element.nativeElement.querySelectorAll('*'));
-    children.forEach(child => {
-      this.renderer.setElementAttribute(child, this.attrname, '');
-    });
+      const elements = Array.prototype.slice.call(this.element.nativeElement.querySelectorAll('*'));
+      elements.unshift(this.element.nativeElement);
+      elements.forEach(element => {
+        Object.keys(attrsDict).forEach(attrName => {
+          if (attrsDict[attrName]) {
+            element.setAttribute(attrName, '');
+          } else {
+            element.removeAttribute(attrName);
+          }
+        });
+      });
+    }
   }
+}
+
+function _init() {
+  const rules = _getRelevantMediaRules();
+  parsedRules = _parseRules(rules);
+
+  const style = document.createElement('style');
+  let cssText = '';
+
+  parsedRules.forEach(parsedRule => {
+    const cssRules = Array.prototype.slice.call(parsedRule.rule.cssRules || parsedRule.rule.rules);
+    cssRules.forEach(cssRule => {
+      let [selectors, values] = cssRule.cssText.split('{');
+      selectors = selectors.trim() + `[${parsedRule.attrName}] `;
+      cssText += `\n${selectors}{${values}`;
+    });
+  });
+
+  style.innerHTML = cssText;
+  document.head.appendChild(style);
+  fakemediaStyleElement = style;
 }
 
 function _getRandomAttr(element) {
@@ -109,10 +124,10 @@ function _getRelevantMediaRules() {
 
 function _parseRules(rules) {
   return rules.map(rule => {
-    const className = rule.media.mediaText.replace(/[^\w\d_]/g, '_')
+    const attrName = rule.media.mediaText.replace(/[^\w\d_]/g, '_')
     return {
       rule,
-      className,
+      attrName,
       matches(element) {
         // const mediaArray = Array.prototype.slice.call(rule.media);
 
@@ -161,7 +176,7 @@ function _getStylesheet(attr, rules) {
   rules.forEach(rule => {
     const cssRules = Array.prototype.slice.call(rule.rule.cssRules || rule.rule.rules);
     cssRules.forEach(cssRule => {
-      newCssText += `\n.${rule.className}[${attr}] ${cssRule.cssText}`;
+      newCssText += `\n.${rule.attrName}[${attr}] ${cssRule.cssText}`;
     });
   });
 
